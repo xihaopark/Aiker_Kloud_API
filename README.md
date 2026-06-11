@@ -1,9 +1,9 @@
-# Aiker Partner API for Kloud / OneSuite Business
+# Aiker Partner API 1.0
 
 Last updated: 2026-06-11
 
 This repository is the external delivery package for Kloud / OneSuite Business
-integration with the Aiker Partner API.
+integration with the Aiker Partner API 1.0.
 
 Production base URL:
 
@@ -22,7 +22,7 @@ plain email or commit them to source control.
 
 ## What Is Ready
 
-The current production API supports:
+Aiker Partner API 1.0 supports:
 
 - Tenant create, list, detail, replace, soft-delete
 - Tenant suspend and unsuspend
@@ -36,13 +36,19 @@ The current production API supports:
 
 The full endpoint contract is in [API_CONTRACT.md](API_CONTRACT.md).
 
+An executable curl-based example is available at:
+
+```bash
+examples/aiker_partner_api_1_0_smoke.sh
+```
+
 ## Current Limitations
 
-These items are not part of the current production handoff:
+These items are not included in Partner API 1.0:
 
 - Dedicated staging environment. Testing should use a production sandbox tenant.
-- Automatic SSO / login-link redirect from OSB into Aiker. This is planned for a
-  later phase and must not be implemented with forgeable query parameters.
+- Automatic SSO / login-link redirect from OSB into Aiker. This must not be
+  implemented with forgeable query parameters.
 - Voice-engine spoken "account suspended" prompt before hang-up. Current suspend
   behavior is enforced at portal login and backend extension-control HTTP APIs.
 - Direct product catalog management through this Partner API. Product Info is a
@@ -61,8 +67,8 @@ This repository is safe to share with Kloud / OSB. It contains:
 Do not put these internal Aiker details in this repository:
 
 - Real API keys, bearer tokens, passwords, or SIP secrets
-- Cloud Run revision names, image tags, Firebase Hosting version IDs
-- Cloud SQL schema migration execution notes
+- Internal deployment revision names, image tags, or hosting version IDs
+- Internal database schema migration execution notes
 - Internal GitHub PR numbers or commit hashes unless Aiker explicitly wants them
 - Internal smoke-test tenant IDs, test user emails, or generated passwords
 - Aiker-only deployment commands or admin bearer token instructions
@@ -70,13 +76,24 @@ Do not put these internal Aiker details in this repository:
 ## Recommended Integration Order
 
 1. Aiker issues a partner API key through a secure channel.
-2. Kloud creates a sandbox tenant with one SIP extension.
-3. Kloud lists the tenant and extension to verify ownership scoping.
+2. Kloud runs the smoke script against a production sandbox tenant:
+   ```bash
+   AIKER_PARTNER_API_KEY='<securely-provided-key>' \
+     ./examples/aiker_partner_api_1_0_smoke.sh
+   ```
+3. Kloud lists the created tenant and extension to verify ownership scoping.
 4. Kloud provisions one end-user account and stores the one-time password
    securely for delivery to the user.
 5. Kloud tests batch imports with a small mixed-validity payload.
 6. Kloud tests suspend / unsuspend on the sandbox tenant.
 7. Kloud moves to real tenant provisioning.
+
+To keep the script-created tenant for debugging:
+
+```bash
+KEEP_TENANT=1 AIKER_PARTNER_API_KEY='<securely-provided-key>' \
+  ./examples/aiker_partner_api_1_0_smoke.sh
+```
 
 ## Support Contact
 
