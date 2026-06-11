@@ -1,6 +1,6 @@
 # Aiker Partner API v1
 
-Last updated: 2026-06-11
+Last updated: 2026-06-12
 
 This repository is the external delivery package for Kloud / OneSuite Business
 integration with the Aiker Partner API v1.
@@ -31,8 +31,11 @@ Aiker Partner API v1 supports:
 - Batch import for extensions, contacts, and Q&A
 - End-user portal account provisioning
 - End-user list and edit within a partner-owned tenant
+- One-time automatic login links from OSB into the Aiker portal
 - Portal login blocking for suspended tenants
 - HTTP-layer guard for AI extension start/restart on suspended tenants
+- End-user portal hides SIP passwords; SIP credentials are managed by the
+  trusted partner API and Aiker admin portal only
 
 The full endpoint contract is in [API_CONTRACT.md](API_CONTRACT.md).
 
@@ -47,12 +50,12 @@ examples/aiker_partner_api_v1_smoke.sh
 These items are not included in Partner API v1:
 
 - Dedicated staging environment. Testing should use a production sandbox tenant.
-- Automatic SSO / login-link redirect from OSB into Aiker. This must not be
-  implemented with forgeable query parameters.
 - Voice-engine spoken "account suspended" prompt before hang-up. Current suspend
   behavior is enforced at portal login and backend extension-control HTTP APIs.
 - Direct product catalog management through this Partner API. Product Info is a
   separate Aiker portal feature, not part of the generic Q&A API.
+- iframe embedding of the Aiker portal inside OneSuite Business. Partner API v1
+  uses one-time redirect login links instead.
 
 ## Public vs Internal Information Boundary
 
@@ -85,8 +88,9 @@ Do not put these internal Aiker details in this repository:
 4. Kloud provisions one end-user account and stores the one-time password
    securely for delivery to the user.
 5. Kloud tests batch imports with a small mixed-validity payload.
-6. Kloud tests suspend / unsuspend on the sandbox tenant.
-7. Kloud moves to real tenant provisioning.
+6. Kloud creates and opens a one-time automatic login link for the sandbox user.
+7. Kloud tests suspend / unsuspend on the sandbox tenant.
+8. Kloud moves to real tenant provisioning.
 
 To keep the script-created tenant for debugging:
 

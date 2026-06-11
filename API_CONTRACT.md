@@ -150,7 +150,7 @@ Response: `201` with the full tenant detail object.
 ### List Tenants
 
 ```http
-GET /api/v1/tenants?page=1&page_size=50&q=example
+GET /api/v1/tenants/?page=1&page_size=50&q=example
 Authorization: Bearer <partner_api_key>
 ```
 
@@ -266,6 +266,10 @@ Extension object:
   "skill": "receptionist_qa"
 }
 ```
+
+`sip_password` is accepted only through this trusted server-to-server Partner
+API. The Aiker end-user portal does not reveal, export, or import SIP passwords.
+Admin users can manage SIP passwords in the Aiker admin portal.
 
 Supported `skill` values:
 
@@ -525,19 +529,71 @@ If the tenant is suspended, login returns a `tenant_suspended` error.
 
 ## SSO / Automatic Login
 
-Automatic login from OSB into Aiker is not included in Partner API v1.
+Partner API v1 includes one-time login links so OSB can redirect users into the
+Aiker portal without asking for the Aiker password again.
 
-Aiker does not support unsafe login links such as:
+Aiker does not support unsafe, forgeable login links such as:
 
 ```text
 https://aiker-kloud.web.app/app?tenant_id=...&email=...
 ```
 
-The planned future flow is:
+### Create One-Time Login Link
 
-1. OSB backend calls Aiker to create a one-time login link.
-2. Aiker returns a short-lived URL with a single-use token.
-3. Browser redirects to Aiker.
-4. Aiker exchanges the token for an end-user session.
+```http
+POST /api/v1/sso/login-links
+Content-Type: application/json
+Authorization: Bearer <partner_api_key>
+```
 
-This will require a separate contract update before implementation.
+Request:
+
+```json
+{
+  "tenant_id": "tenant-id",
+  "user": {
+    "email": "user@example.com",
+    "name": "Jane Smith"
+  },
+  "role": "user",
+  "redirect_path": "/app/extensions"
+}
+```
+
+Supported roles: `user`, `admin`.
+
+Response:
+
+```json
+{
+  "login_url": "https://aiker-kloud.web.app/partner-login?token=one-time-token",
+  "expires_at": "2026-06-12T00:00:00Z",
+  "expires_in_seconds": 300
+}
+```
+
+Important:
+
+- The token is valid for 5 minutes.
+- The token is single-use.
+- The token is stored by Aiker only as a hash.
+- The partner can create links only for tenants it owns.
+- The user must already exist in the Aiker tenant.
+- `redirect_path` must be an internal Aiker portal path beginning with `/app`.
+
+### Browser Redirect
+
+OSB redirects the user's browser to the returned `login_url`.
+
+```text
+https://aiker-kloud.web.app/partner-login?token=one-time-token
+```
+
+Aiker verifies the token, creates an end-user session, and redirects the browser
+to `redirect_path`.
+
+Failure cases:
+
+- Expired or reused token returns `401`.
+- Unknown user or tenant returns `404`.
+- Suspended tenant returns `403` with `tenant_suspended`.

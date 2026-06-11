@@ -83,6 +83,7 @@ request() {
   if [[ -n "$payload" ]]; then
     HTTP_STATUS="$(
       curl -sS -o "$out_file" -w "%{http_code}" \
+        --path-as-is \
         -X "$method" "$url" \
         -H "Authorization: Bearer ${PARTNER_KEY}" \
         -H "Content-Type: application/json" \
@@ -92,11 +93,29 @@ request() {
   else
     HTTP_STATUS="$(
       curl -sS -o "$out_file" -w "%{http_code}" \
+        --path-as-is \
         -X "$method" "$url" \
         -H "Authorization: Bearer ${PARTNER_KEY}" \
         -H "Accept: application/json"
     )"
   fi
+}
+
+enduser_request() {
+  local method="$1"
+  local path="$2"
+  local payload="${3:-}"
+  local out_file="$4"
+  local url="${PORTAL_BASE}/api/enduser${path}"
+
+  HTTP_STATUS="$(
+    curl -sS -o "$out_file" -w "%{http_code}" \
+      --path-as-is \
+      -X "$method" "$url" \
+      -H "Content-Type: application/json" \
+      -H "Accept: application/json" \
+      --data-binary "$payload"
+  )"
 }
 
 json_get() {
@@ -153,6 +172,18 @@ except Exception:
 PY
 }
 
+url_query_param() {
+  local value="$1"
+  local name="$2"
+  python3 - "$value" "$name" <<'PY'
+import sys
+from urllib.parse import parse_qs, urlparse
+
+url, name = sys.argv[1], sys.argv[2]
+print((parse_qs(urlparse(url).query).get(name) or [""])[0])
+PY
+}
+
 assert_http() {
   local name="$1"
   local expected="$2"
@@ -172,7 +203,7 @@ echo "Tenant id: ${TENANT_ID}"
 echo
 
 AUTH_RESPONSE="${TMP_DIR}/auth.json"
-request GET "/tenants?page=1&page_size=5" "" "$AUTH_RESPONSE"
+request GET "/tenants/?page=1&page_size=5" "" "$AUTH_RESPONSE"
 assert_http "Auth check: list tenants" "200" "$AUTH_RESPONSE"
 
 CREATE_PAYLOAD="$(cat <<JSON
@@ -317,6 +348,55 @@ else
   fail "Update tenant user seat and extension limits" "skipped because user creation did not return user_id"
 fi
 
+LOGIN_LINK_PAYLOAD="$(cat <<JSON
+{
+  "tenant_id": "${TENANT_ID}",
+  "user": {
+    "email": "${USER_EMAIL}",
+    "name": "Kloud Smoke User"
+  },
+  "role": "user",
+  "redirect_path": "/app/extensions"
+}
+JSON
+)"
+
+LOGIN_LINK_RESPONSE="${TMP_DIR}/login_link.json"
+request POST "/sso/login-links" "$LOGIN_LINK_PAYLOAD" "$LOGIN_LINK_RESPONSE"
+LOGIN_TOKEN=""
+if assert_http "Create one-time automatic login link" "201" "$LOGIN_LINK_RESPONSE"; then
+  LOGIN_URL="$(json_get "$LOGIN_LINK_RESPONSE" "login_url")"
+  EXPIRES_IN="$(json_get "$LOGIN_LINK_RESPONSE" "expires_in_seconds")"
+  LOGIN_TOKEN="$(url_query_param "$LOGIN_URL" "token")"
+  if [[ -n "$LOGIN_TOKEN" && "$EXPIRES_IN" == "300" ]]; then
+    pass "Verify login link contains hidden one-time token" "token hidden"
+  else
+    fail "Verify login link contains hidden one-time token" "expires_in=${EXPIRES_IN}"
+  fi
+fi
+
+if [[ -n "$LOGIN_TOKEN" ]]; then
+  LOGIN_EXCHANGE_RESPONSE="${TMP_DIR}/login_exchange.json"
+  enduser_request POST "/partner-sso/exchange" "{\"token\":\"${LOGIN_TOKEN}\"}" "$LOGIN_EXCHANGE_RESPONSE"
+  if assert_http "Exchange automatic login token for end-user session" "200" "$LOGIN_EXCHANGE_RESPONSE"; then
+    SESSION_TOKEN="$(json_get "$LOGIN_EXCHANGE_RESPONSE" "token")"
+    REDIRECT_PATH="$(json_get "$LOGIN_EXCHANGE_RESPONSE" "redirect_path")"
+    [[ -n "$SESSION_TOKEN" && "$REDIRECT_PATH" == "/app/extensions" ]] && pass "Verify session returned and redirect path preserved" "session token hidden" || fail "Verify session returned and redirect path preserved" "redirect=${REDIRECT_PATH}"
+  fi
+
+  LOGIN_REUSE_RESPONSE="${TMP_DIR}/login_reuse.json"
+  enduser_request POST "/partner-sso/exchange" "{\"token\":\"${LOGIN_TOKEN}\"}" "$LOGIN_REUSE_RESPONSE"
+  [[ "$HTTP_STATUS" == "401" ]] && pass "Reject reused automatic login token" "HTTP ${HTTP_STATUS}" || fail "Reject reused automatic login token" "HTTP ${HTTP_STATUS}; response saved to ${LOGIN_REUSE_RESPONSE}"
+fi
+
+SUSPEND_LINK_RESPONSE="${TMP_DIR}/suspend_login_link.json"
+request POST "/sso/login-links" "$LOGIN_LINK_PAYLOAD" "$SUSPEND_LINK_RESPONSE"
+SUSPEND_LOGIN_TOKEN=""
+if assert_http "Create login link before suspend check" "201" "$SUSPEND_LINK_RESPONSE"; then
+  SUSPEND_LOGIN_URL="$(json_get "$SUSPEND_LINK_RESPONSE" "login_url")"
+  SUSPEND_LOGIN_TOKEN="$(url_query_param "$SUSPEND_LOGIN_URL" "token")"
+fi
+
 BATCH_EXT_PAYLOAD="$(cat <<JSON
 {
   "items": [
@@ -424,6 +504,12 @@ request GET "/tenants/${TENANT_ID}" "" "$SUSPENDED_DETAIL_RESPONSE"
 if assert_http "Read suspended tenant detail" "200" "$SUSPENDED_DETAIL_RESPONSE"; then
   TENANT_STATUS="$(json_get "$SUSPENDED_DETAIL_RESPONSE" "status")"
   [[ "$TENANT_STATUS" == "suspended" ]] && pass "Verify tenant status suspended" || fail "Verify tenant status suspended" "status=${TENANT_STATUS}"
+fi
+
+if [[ -n "$SUSPEND_LOGIN_TOKEN" ]]; then
+  SUSPENDED_EXCHANGE_RESPONSE="${TMP_DIR}/suspended_exchange.json"
+  enduser_request POST "/partner-sso/exchange" "{\"token\":\"${SUSPEND_LOGIN_TOKEN}\"}" "$SUSPENDED_EXCHANGE_RESPONSE"
+  [[ "$HTTP_STATUS" == "403" ]] && pass "Reject automatic login for suspended tenant" "HTTP ${HTTP_STATUS}" || fail "Reject automatic login for suspended tenant" "HTTP ${HTTP_STATUS}; response saved to ${SUSPENDED_EXCHANGE_RESPONSE}"
 fi
 
 UNSUSPEND_RESPONSE="${TMP_DIR}/unsuspend.json"
