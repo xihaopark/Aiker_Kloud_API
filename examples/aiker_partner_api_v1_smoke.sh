@@ -165,7 +165,7 @@ assert_http() {
   return 1
 }
 
-echo "Aiker Partner API 1.0 smoke"
+echo "Aiker Partner API v1 smoke"
 echo "API base: ${API_BASE}"
 echo "Portal base: ${PORTAL_BASE}"
 echo "Tenant id: ${TENANT_ID}"
@@ -416,7 +416,7 @@ if assert_http "Batch import Q&A" "200" "$BATCH_KBQA_RESPONSE"; then
 fi
 
 SUSPEND_RESPONSE="${TMP_DIR}/suspend.json"
-request PATCH "/tenants/${TENANT_ID}/status" '{"status":"suspended","reason":"Partner API 1.0 smoke test"}' "$SUSPEND_RESPONSE"
+request PATCH "/tenants/${TENANT_ID}/status" '{"status":"suspended","reason":"Partner API v1 smoke test"}' "$SUSPEND_RESPONSE"
 assert_http "Suspend tenant" "200" "$SUSPEND_RESPONSE"
 
 SUSPENDED_DETAIL_RESPONSE="${TMP_DIR}/tenant_suspended_get.json"
@@ -427,7 +427,7 @@ if assert_http "Read suspended tenant detail" "200" "$SUSPENDED_DETAIL_RESPONSE"
 fi
 
 UNSUSPEND_RESPONSE="${TMP_DIR}/unsuspend.json"
-request PATCH "/tenants/${TENANT_ID}/status" '{"status":"active","reason":"Partner API 1.0 smoke test complete"}' "$UNSUSPEND_RESPONSE"
+request PATCH "/tenants/${TENANT_ID}/status" '{"status":"active","reason":"Partner API v1 smoke test complete"}' "$UNSUSPEND_RESPONSE"
 assert_http "Unsuspend tenant" "200" "$UNSUSPEND_RESPONSE"
 
 cleanup_tenant

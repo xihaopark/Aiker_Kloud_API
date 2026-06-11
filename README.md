@@ -1,9 +1,9 @@
-# Aiker Partner API 1.0
+# Aiker Partner API v1
 
 Last updated: 2026-06-11
 
 This repository is the external delivery package for Kloud / OneSuite Business
-integration with the Aiker Partner API 1.0.
+integration with the Aiker Partner API v1.
 
 Production base URL:
 
@@ -22,7 +22,7 @@ plain email or commit them to source control.
 
 ## What Is Ready
 
-Aiker Partner API 1.0 supports:
+Aiker Partner API v1 supports:
 
 - Tenant create, list, detail, replace, soft-delete
 - Tenant suspend and unsuspend
@@ -39,12 +39,12 @@ The full endpoint contract is in [API_CONTRACT.md](API_CONTRACT.md).
 An executable curl-based example is available at:
 
 ```bash
-examples/aiker_partner_api_1_0_smoke.sh
+examples/aiker_partner_api_v1_smoke.sh
 ```
 
 ## Current Limitations
 
-These items are not included in Partner API 1.0:
+These items are not included in Partner API v1:
 
 - Dedicated staging environment. Testing should use a production sandbox tenant.
 - Automatic SSO / login-link redirect from OSB into Aiker. This must not be
@@ -79,7 +79,7 @@ Do not put these internal Aiker details in this repository:
 2. Kloud runs the smoke script against a production sandbox tenant:
    ```bash
    AIKER_PARTNER_API_KEY='<securely-provided-key>' \
-     ./examples/aiker_partner_api_1_0_smoke.sh
+     ./examples/aiker_partner_api_v1_smoke.sh
    ```
 3. Kloud lists the created tenant and extension to verify ownership scoping.
 4. Kloud provisions one end-user account and stores the one-time password
@@ -92,7 +92,7 @@ To keep the script-created tenant for debugging:
 
 ```bash
 KEEP_TENANT=1 AIKER_PARTNER_API_KEY='<securely-provided-key>' \
-  ./examples/aiker_partner_api_1_0_smoke.sh
+  ./examples/aiker_partner_api_v1_smoke.sh
 ```
 
 ## Support Contact

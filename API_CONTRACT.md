@@ -1,6 +1,6 @@
 # Aiker Partner API Contract
 
-Version: 1.0
+Version: v1
 
 Base path:
 
@@ -8,8 +8,7 @@ Base path:
 https://aiker-kloud.web.app/api/v1
 ```
 
-The `/api/v1` URL segment is the stable technical route for this API surface.
-The external product delivery described here is **Aiker Partner API 1.0**.
+The external product delivery described here is **Aiker Partner API v1**.
 
 Authentication:
 
@@ -287,7 +286,7 @@ Reserved value:
 
 | Value | Behavior |
 |---|---|
-| `appointment_scheduler` | Not included in Partner API 1.0 |
+| `appointment_scheduler` | Not included in Partner API v1 |
 
 ### List Extensions
 
@@ -526,7 +525,7 @@ If the tenant is suspended, login returns a `tenant_suspended` error.
 
 ## SSO / Automatic Login
 
-Automatic login from OSB into Aiker is not included in Partner API 1.0.
+Automatic login from OSB into Aiker is not included in Partner API v1.
 
 Aiker does not support unsafe login links such as:
 
