@@ -5,6 +5,7 @@ API_BASE="${AIKER_API_BASE:-https://aiker-kloud.web.app/api/v1}"
 PORTAL_BASE="${AIKER_PORTAL_BASE:-https://aiker-kloud.web.app}"
 PARTNER_KEY="${AIKER_PARTNER_API_KEY:-}"
 KEEP_TENANT="${KEEP_TENANT:-0}"
+RUN_EXTENSION_RUNTIME="${RUN_EXTENSION_RUNTIME:-0}"
 
 if [[ -z "$PARTNER_KEY" ]]; then
   echo "ERROR: AIKER_PARTNER_API_KEY is required." >&2
@@ -233,6 +234,7 @@ CREATE_PAYLOAD="$(cat <<JSON
       "agent_id": "frontdesk-${RUN_ID}",
       "extension_number": "${EXTENSION_PRIMARY}",
       "sip_domain": "sip.onesuite.example",
+      "sip_username": "${EXTENSION_PRIMARY}",
       "sip_server": "core1-us-lax.myippbx.com",
       "sip_password": "example-sip-password-change-me",
       "skill": "receptionist_qa"
@@ -285,6 +287,27 @@ request GET "/tenants/${TENANT_ID}/extensions" "" "$EXT_LIST_RESPONSE"
 if assert_http "List SIP extensions" "200" "$EXT_LIST_RESPONSE"; then
   EXT_COUNT="$(json_len "$EXT_LIST_RESPONSE")"
   [[ "$EXT_COUNT" -ge 1 ]] && pass "Verify extension list contains data" "count=${EXT_COUNT}" || fail "Verify extension list contains data" "count=${EXT_COUNT}"
+  LISTED_SIP_USERNAME="$(json_get "$EXT_LIST_RESPONSE" "0.sip_username")"
+  [[ "$LISTED_SIP_USERNAME" == "$EXTENSION_PRIMARY" ]] && pass "Verify extension sip_username returned" "sip_username=${LISTED_SIP_USERNAME}" || fail "Verify extension sip_username returned" "sip_username=${LISTED_SIP_USERNAME}"
+fi
+
+EXT_STATUS_RESPONSE="${TMP_DIR}/extension_runtime_status.json"
+request GET "/tenants/${TENANT_ID}/extensions/${EXTENSION_PRIMARY}/runtime/status" "" "$EXT_STATUS_RESPONSE"
+if assert_http "Read extension runtime status" "200" "$EXT_STATUS_RESPONSE"; then
+  RUNTIME_STATE="$(json_get "$EXT_STATUS_RESPONSE" "state")"
+  [[ -n "$RUNTIME_STATE" ]] && pass "Verify runtime status has state" "state=${RUNTIME_STATE}" || fail "Verify runtime status has state"
+fi
+
+if [[ "$RUN_EXTENSION_RUNTIME" == "1" ]]; then
+  EXT_START_RESPONSE="${TMP_DIR}/extension_runtime_start.json"
+  request POST "/tenants/${TENANT_ID}/extensions/${EXTENSION_PRIMARY}/runtime/start" "" "$EXT_START_RESPONSE"
+  assert_http "Start extension runtime" "200" "$EXT_START_RESPONSE"
+
+  EXT_STOP_RESPONSE="${TMP_DIR}/extension_runtime_stop.json"
+  request POST "/tenants/${TENANT_ID}/extensions/${EXTENSION_PRIMARY}/runtime/stop" "" "$EXT_STOP_RESPONSE"
+  assert_http "Stop extension runtime" "200" "$EXT_STOP_RESPONSE"
+else
+  echo "INFO: Skipping extension runtime start/stop. Set RUN_EXTENSION_RUNTIME=1 to exercise those endpoints."
 fi
 
 EXT_UPDATE_PAYLOAD="$(cat <<JSON
@@ -292,6 +315,7 @@ EXT_UPDATE_PAYLOAD="$(cat <<JSON
   "agent_id": "frontdesk-${RUN_ID}",
   "extension_number": "${EXTENSION_PRIMARY}",
   "sip_domain": "sip.onesuite.example",
+  "sip_username": "${EXTENSION_PRIMARY}",
   "sip_server": "core1-us-lax-edited.myippbx.com",
   "sip_password": "example-sip-password-change-me",
   "skill": "receptionist_only"
@@ -404,6 +428,7 @@ BATCH_EXT_PAYLOAD="$(cat <<JSON
       "agent_id": "batch-sales-${RUN_ID}",
       "extension_number": "201",
       "sip_domain": "sip.onesuite.example",
+      "sip_username": "201",
       "sip_server": "core1-us-lax.myippbx.com",
       "sip_password": "example-sip-password-change-me",
       "skill": "receptionist_only"
@@ -412,6 +437,7 @@ BATCH_EXT_PAYLOAD="$(cat <<JSON
       "agent_id": "batch-support-${RUN_ID}",
       "extension_number": "202",
       "sip_domain": "sip.onesuite.example",
+      "sip_username": "202",
       "sip_server": "core1-us-lax.myippbx.com",
       "sip_password": "example-sip-password-change-me",
       "skill": "qa_only"
@@ -420,6 +446,7 @@ BATCH_EXT_PAYLOAD="$(cat <<JSON
       "agent_id": "batch-invalid-${RUN_ID}",
       "extension_number": "203",
       "sip_domain": "sip.onesuite.example",
+      "sip_username": "203",
       "sip_server": "core1-us-lax.myippbx.com",
       "sip_password": "example-sip-password-change-me",
       "skill": "appointment_scheduler"

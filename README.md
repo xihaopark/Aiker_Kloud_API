@@ -28,12 +28,15 @@ Aiker Partner API v1 supports:
 - Tenant suspend and unsuspend
 - Tenant feature flags / entitlements
 - AI agent / SIP extension create, list, detail, update, delete
+- SIP extension runtime status, start, and stop
 - Batch import for extensions, contacts, and Q&A
 - End-user portal account provisioning
 - End-user list and edit within a partner-owned tenant
 - One-time automatic login links from OSB into the Aiker portal
 - Portal login blocking for suspended tenants
 - HTTP-layer guard for AI extension start/restart on suspended tenants
+- SIP extensions require `sip_username` in the Partner API payload; extension
+  creation saves configuration and does not auto-start runtime
 - End-user portal hides SIP passwords; SIP credentials are managed by the
   trusted partner API and Aiker admin portal only
 
@@ -85,17 +88,26 @@ Do not put these internal Aiker details in this repository:
      ./examples/aiker_partner_api_v1_smoke.sh
    ```
 3. Kloud lists the created tenant and extension to verify ownership scoping.
-4. Kloud provisions one end-user account and stores the one-time password
+4. Kloud reads extension runtime status and optionally starts/stops the sandbox
+   extension when testing SIP runtime control.
+5. Kloud provisions one end-user account and stores the one-time password
    securely for delivery to the user.
-5. Kloud tests batch imports with a small mixed-validity payload.
-6. Kloud creates and opens a one-time automatic login link for the sandbox user.
-7. Kloud tests suspend / unsuspend on the sandbox tenant.
-8. Kloud moves to real tenant provisioning.
+6. Kloud tests batch imports with a small mixed-validity payload.
+7. Kloud creates and opens a one-time automatic login link for the sandbox user.
+8. Kloud tests suspend / unsuspend on the sandbox tenant.
+9. Kloud moves to real tenant provisioning.
 
 To keep the script-created tenant for debugging:
 
 ```bash
 KEEP_TENANT=1 AIKER_PARTNER_API_KEY='<securely-provided-key>' \
+  ./examples/aiker_partner_api_v1_smoke.sh
+```
+
+To also exercise extension runtime start/stop on the sandbox extension:
+
+```bash
+RUN_EXTENSION_RUNTIME=1 AIKER_PARTNER_API_KEY='<securely-provided-key>' \
   ./examples/aiker_partner_api_v1_smoke.sh
 ```
 

@@ -127,6 +127,7 @@ Request:
       "agent_id": "frontdesk",
       "extension_number": "101",
       "sip_domain": "example.sip.domain",
+      "sip_username": "101",
       "sip_server": "core1-us-lax.myippbx.com",
       "sip_password": "secret",
       "skill": "receptionist_qa"
@@ -261,15 +262,24 @@ Extension object:
   "agent_id": "frontdesk",
   "extension_number": "101",
   "sip_domain": "example.sip.domain",
+  "sip_username": "101",
   "sip_server": "core1-us-lax.myippbx.com",
   "sip_password": "secret",
   "skill": "receptionist_qa"
 }
 ```
 
+`sip_username` is the SIP registration username required by the voice runtime.
+For OneSuite tenants this may be the same value as the extension number, but it
+must still be sent explicitly.
+
 `sip_password` is accepted only through this trusted server-to-server Partner
 API. The Aiker end-user portal does not reveal, export, or import SIP passwords.
 Admin users can manage SIP passwords in the Aiker admin portal.
+
+Creating or updating an extension only saves configuration. It does not start
+the runtime. Use the runtime endpoints below when OSB wants an extension to go
+online or offline.
 
 Supported `skill` values:
 
@@ -332,7 +342,41 @@ Authorization: Bearer <partner_api_key>
 Deleting the last active extension is rejected to keep the tenant minimally
 operable.
 
+### Extension Runtime Status / Start / Stop
+
+```http
+GET  /api/v1/tenants/{tenant_id}/extensions/{extension_number}/runtime/status
+POST /api/v1/tenants/{tenant_id}/extensions/{extension_number}/runtime/start
+POST /api/v1/tenants/{tenant_id}/extensions/{extension_number}/runtime/stop
+Authorization: Bearer <partner_api_key>
+```
+
+Runtime endpoints are partner-scoped and only operate on tenants owned by the
+API key's partner. `start` and `stop` are idempotent: if the extension is already
+in the requested state, the API returns the current status. Starting an
+extension for a suspended tenant returns `tenant_suspended`.
+
+Example response:
+
+```json
+{
+  "extension": "101",
+  "state": "running",
+  "pid": null,
+  "last_seen": null,
+  "log_file": null,
+  "service_instances": [],
+  "registered": true
+}
+```
+
 ## End-User Portal Accounts
+
+Portal account email addresses are globally unique across Aiker, not
+tenant-scoped. OSB may use a stable email-style login such as
+`admin@07ptp.onesuite.com` or `admin+07ptp@onesuite.com` as long as it is unique
+and OSB-controlled. It does not have to receive email unless OSB wants to use
+email-based password reset or notifications.
 
 ### List Users
 
@@ -446,6 +490,7 @@ Request:
       "agent_id": "frontdesk-101",
       "extension_number": "101",
       "sip_domain": "example.sip.domain",
+      "sip_username": "101",
       "sip_server": "core1-us-lax.myippbx.com",
       "sip_password": "secret",
       "skill": "receptionist_qa"
