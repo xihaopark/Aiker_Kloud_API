@@ -1,6 +1,6 @@
 # Aiker Partner API v1
 
-Last updated: 2026-06-12
+Last updated: 2026-06-13
 
 This repository is the external delivery package for Kloud / OneSuite Business
 integration with the Aiker Partner API v1.
@@ -32,6 +32,11 @@ Aiker Partner API v1 supports:
 - Batch import for extensions, contacts, and Q&A
 - End-user portal account provisioning
 - End-user list and edit within a partner-owned tenant
+- Tenant portal roles: `user` for normal portal users, `admin` for a
+  customer-side tenant manager. This is not an Aiker internal admin role.
+- Portal account capacity fields: `seat_limit` and `extension_limit` are stored
+  for entitlement/accounting display and do not create SIP extensions by
+  themselves.
 - One-time automatic login links from OSB into the Aiker portal
 - Portal login blocking for suspended tenants
 - HTTP-layer guard for AI extension start/restart on suspended tenants

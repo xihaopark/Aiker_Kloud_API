@@ -378,6 +378,54 @@ tenant-scoped. OSB may use a stable email-style login such as
 and OSB-controlled. It does not have to receive email unless OSB wants to use
 email-based password reset or notifications.
 
+### Portal User Fields
+
+`role` is the tenant portal role:
+
+- `user`: normal Aiker tenant portal user.
+- `admin`: customer-side tenant manager or owner inside that tenant portal.
+
+`admin` here does **not** mean Aiker platform admin. It does not grant access to
+the Aiker internal admin portal. Aiker internal admin roles such as superadmin or
+ops are separate.
+
+Feature access is primarily tenant-level through `feature_flags`, not per-user.
+For example, whether QA or Product Info is available is controlled by the
+tenant's feature flags.
+
+`seat_limit` and `extension_limit` are capacity/allocation fields:
+
+- `seat_limit`: how many Aiker seats are allocated to the portal account/tenant
+  relationship for display, accounting, and future enforcement.
+- `extension_limit`: how many AI/SIP extensions are allocated for display,
+  accounting, and future enforcement.
+
+These fields do not create extensions automatically. SIP/AI extensions are
+created and started through the extension endpoints.
+
+For most OSB-created portal users, use:
+
+```json
+{
+  "role": "user",
+  "seat_limit": 1,
+  "extension_limit": 3
+}
+```
+
+Use `role: "admin"` only for the customer's primary manager/owner account.
+
+### Simple Tenant Data Model
+
+```text
+tenant
+  feature_flags        controls enabled portal features such as qa/products
+  users[]              portal login accounts: email, role, limits
+  extensions[]         SIP/AI extension configuration and runtime control
+  contacts[]           receptionist transfer directory
+  kbqa[]               generic Q&A knowledge base
+```
+
 ### List Users
 
 ```http
