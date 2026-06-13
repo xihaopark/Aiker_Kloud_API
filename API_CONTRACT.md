@@ -380,28 +380,35 @@ email-based password reset or notifications.
 
 ### Portal User Fields
 
-`role` is the tenant portal role:
+`role` is the tenant portal account label:
 
-- `user`: normal Aiker tenant portal user.
-- `admin`: customer-side tenant manager or owner inside that tenant portal.
+- `user`: normal Aiker tenant portal account.
+- `admin`: customer's primary portal account.
 
-`admin` here does **not** mean Aiker platform admin. It does not grant access to
-the Aiker internal admin portal. Aiker internal admin roles such as superadmin or
-ops are separate.
+In Partner API v1, `user` and `admin` currently have the same end-user portal
+permissions. `admin` is kept as a simple label for the customer's primary
+account and for future role separation. It does **not** mean Aiker platform
+admin, and it does not grant access to the Aiker internal admin portal. Aiker
+internal admin roles such as superadmin or ops are separate.
 
 Feature access is primarily tenant-level through `feature_flags`, not per-user.
 For example, whether QA or Product Info is available is controlled by the
 tenant's feature flags.
 
-`seat_limit` and `extension_limit` are capacity/allocation fields:
+`seat_limit` and `extension_limit` describe the purchased Aiker allocation:
 
-- `seat_limit`: how many Aiker seats are allocated to the portal account/tenant
-  relationship for display, accounting, and future enforcement.
-- `extension_limit`: how many AI/SIP extensions are allocated for display,
-  accounting, and future enforcement.
+- `extension_limit`: how many Aiker AI SIP extensions the tenant purchased or is
+  allowed to provision. This is not the customer's total OneSuite extension
+  count. For example, a customer may have 10 OneSuite phone extensions, but only
+  2 are Aiker AI extensions.
+- `seat_limit`: AI-seat/account capacity metadata. In Partner API v1, the
+  practical AI seat is the provisioned AI SIP extension, so OSB can usually set
+  this to the same purchased AI seat count as `extension_limit`.
 
 These fields do not create extensions automatically. SIP/AI extensions are
-created and started through the extension endpoints.
+created and started through the extension endpoints. Kloud/OSB controls which
+SIP extensions become Aiker AI extensions by sending those SIP credentials to
+the Partner API.
 
 For most OSB-created portal users, use:
 
@@ -413,7 +420,8 @@ For most OSB-created portal users, use:
 }
 ```
 
-Use `role: "admin"` only for the customer's primary manager/owner account.
+Use `role: "admin"` only if OSB wants to mark the customer's primary portal
+account. Otherwise, `role: "user"` is enough.
 
 ### Simple Tenant Data Model
 

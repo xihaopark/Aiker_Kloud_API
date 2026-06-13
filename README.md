@@ -32,11 +32,13 @@ Aiker Partner API v1 supports:
 - Batch import for extensions, contacts, and Q&A
 - End-user portal account provisioning
 - End-user list and edit within a partner-owned tenant
-- Tenant portal roles: `user` for normal portal users, `admin` for a
-  customer-side tenant manager. This is not an Aiker internal admin role.
-- Portal account capacity fields: `seat_limit` and `extension_limit` are stored
-  for entitlement/accounting display and do not create SIP extensions by
-  themselves.
+- Tenant portal roles: `user` and `admin` currently have the same end-user
+  portal permissions in v1. `admin` is only a label for the customer's primary
+  portal account and is not an Aiker internal admin role.
+- `extension_limit` means the number of purchased Aiker AI SIP extensions. This
+  is not the customer's total OneSuite phone extension count.
+- `seat_limit` is kept as purchased AI-seat/account capacity metadata. In v1,
+  the practical AI seat is the provisioned AI SIP extension.
 - One-time automatic login links from OSB into the Aiker portal
 - Portal login blocking for suspended tenants
 - HTTP-layer guard for AI extension start/restart on suspended tenants
